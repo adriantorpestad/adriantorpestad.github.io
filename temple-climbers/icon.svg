@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Temple Climbers icon: a low-poly peak with its temple, in the game's palette. -->
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5f8cc0" />
+      <stop offset="0.55" stop-color="#b9c4d8" />
+      <stop offset="1" stop-color="#eecdb0" />
+    </linearGradient>
+    <radialGradient id="glow" cx="32" cy="12" r="14" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffe3a0" stop-opacity="0.95" />
+      <stop offset="1" stop-color="#ffe3a0" stop-opacity="0" />
+    </radialGradient>
+    <clipPath id="tile"><rect width="64" height="64" rx="14" /></clipPath>
+  </defs>
+  <g clip-path="url(#tile)">
+    <rect width="64" height="64" fill="url(#sky)" />
+    <circle cx="32" cy="12" r="14" fill="url(#glow)" />
+    <!-- Rock faces, lit from the left -->
+    <polygon points="32,14 2,60 29,60" fill="#6a5f56" />
+    <polygon points="32,14 29,60 62,60" fill="#454a58" />
+    <polygon points="32,14 16,40 30,44" fill="#585660" />
+    <!-- Stone ledges -->
+    <polygon points="17,42 26,43 26,46 16,45" fill="#e3d8c4" />
+    <polygon points="35,31 43,30 44,33 35,34" fill="#c2b5a0" />
+    <!-- Snow cap -->
+    <polygon points="32,14 23,28 29,25.5 34,29 40,26" fill="#eef2f6" />
+    <polygon points="32,14 34,29 40,26" fill="#c9d3df" />
+    <!-- Grass -->
+    <polygon points="0,52 14,47 30,53 46,48 64,53 64,64 0,64" fill="#8fae6a" />
+    <polygon points="0,56 20,51 40,57 64,54 64,64 0,64" fill="#6f9455" />
+    <!-- Temple -->
+    <rect x="27.5" y="9.5" width="9" height="6.5" fill="#ece5d8" />
+    <rect x="30.5" y="11.5" width="3" height="4.5" fill="#f3b04a" />
+    <polygon points="23,10.5 41,10.5 32,3" fill="#c4532d" />
+  </g>
+</svg>

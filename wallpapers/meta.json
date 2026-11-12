@@ -1,0 +1,10 @@
+{
+  "title": "Wallpapers",
+  "description": "Generate abstract wallpapers for iPhone, iPad, Mac and more.",
+  "thumbnail": "thumb.png",
+  "tags": [
+    "webgl",
+    "generative"
+  ],
+  "version": "v0.1.0"
+}

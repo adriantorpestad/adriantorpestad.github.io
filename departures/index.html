@@ -1,0 +1,497 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#d9e1e8">
+<title>Avgångar</title>
+<style>
+  :root {
+    --bg: #d9e1e8; --muted: #5b6672; --text: #1a1a1a;
+    --panel: #ffffff; --panel-line: #e3e6ea; --field: #f2f4f6;
+    --plate-dark: #2a2d31; --plate-red: #d71f3a; --plate-white: #f4f4f2; --plate-ink: #1a1a1a;
+    --bus-blue: #7ec8e3;
+    --housing: #2b2e33; --screen: #e8ebe6; --screen-ink: #1c1f1d; --badge: #1f4f5a;
+    --dot: #9aa6b2; --dot-on: #2a2d31; --pill: rgba(255,255,255,.7);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14171b; --muted: #8d97a3; --text: #eef1f4;
+      --panel: #1d2127; --panel-line: #2d333b; --field: #262b32;
+      --dot: #4a525c; --dot-on: #e8ebe6; --pill: #262b32;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 16px/1.25 "Helvetica Neue", Helvetica, Arial, system-ui, sans-serif;
+    padding: max(16px, env(safe-area-inset-top)) 16px max(20px, env(safe-area-inset-bottom));
+  }
+  main { max-width: 440px; margin: 0 auto; display: grid; gap: 18px; }
+  footer { display: flex; justify-content: space-between; align-items: center; color: var(--muted); font-size: 13px; gap: 12px; }
+  footer .actions { display: flex; gap: 8px; }
+  .pill {
+    background: var(--pill); color: var(--text); font-size: 14px; font-weight: 600;
+    padding: 7px 14px; border-radius: 999px; transition: opacity .15s, transform .1s;
+  }
+  .pill:active { transform: scale(.96); }
+  .pill.busy { opacity: .55; }
+  button { background: none; border: 0; color: inherit; font: inherit; padding: 0; cursor: pointer; }
+
+  /* ---- Carousel ---- */
+  .carousel {
+    display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none;
+    margin: 0 -16px; padding: 4px 0 14px; overscroll-behavior-x: contain;
+  }
+  .carousel::-webkit-scrollbar { display: none; }
+  .slide { flex: 0 0 100%; scroll-snap-align: center; padding: 0 16px; }
+  .dots { display: flex; justify-content: center; gap: 4px; min-height: 12px; }
+  .dots button { width: 22px; height: 22px; display: grid; place-items: center; }
+  .dots button::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--dot); transition: transform .15s, background .15s; }
+  .dots button[aria-current="true"]::before { background: var(--dot-on); transform: scale(1.25); }
+
+  /* ---- Sign plate ---- */
+  .sign { display: grid; justify-items: center; color: var(--plate-ink); }
+  .plate {
+    width: 100%; background: var(--plate-white); border-radius: 6px; overflow: hidden;
+    border: 3px solid #c9cbcd; box-shadow: 0 6px 18px rgba(0,0,0,.18);
+  }
+  .plate-top { background: var(--plate-dark); display: flex; gap: 10px; padding: 10px 12px; }
+  .ico { width: 46px; height: 46px; border-radius: 4px; display: grid; place-items: center; }
+  .ico.bus { background: var(--bus-blue); }
+  .ico.h { border: 2.5px solid #fff; color: #fff; font-weight: 800; font-size: 32px; line-height: 1; }
+  .plate-name {
+    background: var(--plate-red); color: #fff; font-weight: 700; font-size: 26px;
+    padding: 7px 12px; letter-spacing: -.01em; overflow-wrap: anywhere;
+  }
+  .route { display: flex; align-items: center; gap: 14px; padding: 6px 12px; border-top: 2px solid var(--plate-dark); }
+  .route:first-of-type { border-top: 0; }
+  .route .num { font-weight: 800; font-size: 34px; min-width: 56px; text-align: center; letter-spacing: -.02em; }
+  .route .ends { font-size: 16px; font-weight: 500; line-height: 1.15; }
+
+  /* ---- Pole + display ---- */
+  .pole { width: 14px; height: 18px; background: linear-gradient(90deg, #6d7278, #b5b9bd 45%, #6d7278); }
+  .display {
+    width: 92%; background: var(--housing); border-radius: 12px; padding: 14px;
+    box-shadow: 0 6px 16px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.08);
+  }
+  .screen { background: var(--screen); color: var(--screen-ink); border-radius: 3px; padding: 6px 8px; min-height: 60px; }
+  .row { display: flex; align-items: center; gap: 10px; padding: 5px 0; }
+  .row + .row { border-top: 1px solid #cfd4cd; }
+  .badge {
+    background: var(--badge); color: #fff; font-weight: 700; font-size: 17px;
+    min-width: 38px; text-align: center; padding: 2px 6px; border-radius: 2px;
+  }
+  .dest { flex: 1; font-size: 17px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .t { font-weight: 700; font-size: 22px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .t small { font-size: 12px; font-weight: 600; margin-left: 2px; }
+  .msg { font-size: 15px; padding: 14px 4px; text-align: center; }
+
+  /* ---- Empty state ---- */
+  .empty { text-align: center; padding: 60px 16px; color: var(--muted); display: grid; gap: 16px; justify-items: center; }
+  .btn {
+    background: var(--plate-red); color: #fff; font-weight: 700; padding: 11px 18px; border-radius: 8px;
+  }
+  .btn.ghost { background: var(--field); color: var(--text); }
+
+  /* ---- Settings ---- */
+  dialog {
+    border: 0; padding: 0; background: var(--panel); color: var(--text);
+    width: 100%; max-width: 480px; max-height: 100dvh; height: 100dvh; margin: 0 auto;
+  }
+  @media (min-width: 600px) { dialog { height: auto; max-height: 86vh; margin: 7vh auto; border-radius: 14px; } }
+  dialog::backdrop { background: rgba(0,0,0,.45); }
+  .sheet { display: flex; flex-direction: column; height: 100%; max-height: inherit; }
+  .sheet-head {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: max(14px, env(safe-area-inset-top)) 28px 12px; /* 16px sheet gutter + 12px card padding */ border-bottom: 1px solid var(--panel-line);
+  }
+  .sheet-head h2 { margin: 0; font-size: 19px; }
+  .sheet-head .done { font-weight: 700; color: var(--plate-red); font-size: 17px; }
+  .sheet-body { overflow-y: auto; padding: 16px 16px max(24px, env(safe-area-inset-bottom)); display: grid; gap: 22px; align-content: start; }
+  .sheet h3 { margin: 0 0 8px; padding: 0 12px; font-size: 15px; font-weight: 600; color: var(--muted); }
+  .hint { color: var(--muted); font-size: 13px; margin: 6px 0 0; padding: 0 12px; }
+
+  .mine { display: grid; gap: 10px; }
+  .item { background: var(--field); border-radius: 10px; padding: 10px 12px; display: grid; gap: 8px; }
+  .item-head { display: flex; align-items: center; gap: 8px; }
+  .item-name { flex: 1; font-weight: 700; }
+  .item-name small, .result small { font-weight: 400; color: var(--muted); margin-left: 6px; }
+  .icon-btn { width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; color: var(--muted); font-size: 18px; }
+  .icon-btn:hover { background: var(--panel-line); }
+  .icon-btn:disabled { opacity: .3; cursor: default; background: none; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip {
+    border: 1.5px solid var(--badge); color: var(--text); border-radius: 4px;
+    padding: 3px 9px; font-weight: 700; font-size: 14px; min-width: 38px;
+  }
+  .chip[aria-pressed="true"] { background: var(--badge); color: #fff; }
+  .chips .note { color: var(--muted); font-size: 13px; align-self: center; }
+
+  .search { display: flex; gap: 8px; }
+  .search input {
+    flex: 1; min-width: 0; font: inherit; font-size: 16px; padding: 10px 12px; border-radius: 8px;
+    border: 1px solid var(--panel-line); background: var(--field); color: var(--text);
+  }
+  .results { display: grid; margin-top: 8px; }
+  .result {
+    text-align: left; padding: 11px 4px; border-bottom: 1px solid var(--panel-line);
+    display: flex; justify-content: space-between; gap: 10px;
+  }
+  .result:hover { background: var(--field); }
+  .result .dist { color: var(--muted); font-size: 13px; white-space: nowrap; }
+  .result.added { opacity: .45; }
+</style>
+</head>
+<body>
+<main>
+  <div id="carousel" class="carousel" aria-roledescription="karusell"></div>
+  <div id="dots" class="dots" role="tablist" aria-label="Hållplatser"></div>
+  <footer>
+    <span id="status">Laddar…</span>
+    <span class="actions">
+      <button id="refresh" class="pill" type="button">Uppdatera</button>
+      <button id="open-settings" class="pill" type="button">Hållplatser</button>
+    </span>
+  </footer>
+</main>
+
+<dialog id="settings" aria-labelledby="settings-title">
+  <div class="sheet">
+    <div class="sheet-head">
+      <h2 id="settings-title">Hållplatser</h2>
+      <button class="done" type="button" id="close-settings">Klar</button>
+    </div>
+    <div class="sheet-body">
+      <section>
+        <h3>Mina hållplatser</h3>
+        <div id="mine" class="mine"></div>
+        <p class="hint">Tryck på linjerna du vill se. Om ingen linje är vald visas alla.</p>
+      </section>
+      <section>
+        <h3>Lägg till</h3>
+        <div class="search">
+          <input id="q" type="search" placeholder="Sök hållplats…" autocomplete="off" enterkeyhint="search">
+          <button id="near" class="btn ghost" type="button">Nära mig</button>
+        </div>
+        <div id="results" class="results"></div>
+      </section>
+    </div>
+  </div>
+</dialog>
+
+<script>
+// ---- Settings & storage ---------------------------------------------------
+const API = "https://transport.integration.sl.se/v1";
+const STORE_KEY = "departures:v1";
+const REFRESH_MS = 30_000;
+const PER_DIRECTION = 2;   // like the real display: next two per direction, mixed by time
+const MAX_ROWS = 6;
+const DEFAULT = {
+  stops: [
+    { id: 1272, name: "Wivalliusgatan", lines: ["1"] },
+    { id: 1275, name: "Lilla Essingen", lines: ["1"] },
+  ],
+  slide: 0,
+};
+
+function loadConfig() {
+  try {
+    const c = JSON.parse(localStorage.getItem(STORE_KEY));
+    if (c && Array.isArray(c.stops)) return { slide: 0, ...c };
+  } catch {}
+  return structuredClone(DEFAULT);
+}
+function saveConfig() {
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(config)); } catch {}
+}
+let config = loadConfig();
+
+// ---- Data -----------------------------------------------------------------
+const state = new Map();   // stopId -> { deps, error, routes: { line: { dir: dest } } }
+let lastOk = null;
+
+// API gives Stockholm local time without offset ("2026-11-12T12:54:55").
+// Interpret it as Europe/Stockholm regardless of the device's timezone.
+function parseSthlm(s) {
+  if (/[zZ]|[+-]\d\d:?\d\d$/.test(s)) return new Date(s);
+  const asUtc = new Date(s + "Z");
+  const parts = Object.fromEntries(new Intl.DateTimeFormat("en-US", {
+    timeZone: "Europe/Stockholm", hourCycle: "h23",
+    year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit",
+  }).formatToParts(asUtc).map(p => [p.type, p.value]));
+  const sthlmAsUtc = Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute, parts.second);
+  return new Date(asUtc.getTime() - (sthlmAsUtc - asUtc.getTime()));
+}
+const byLine = (a, b) => a.localeCompare(b, "sv", { numeric: true });
+const stateFor = id => state.get(id) || (state.set(id, { deps: [], routes: {} }), state.get(id));
+
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+async function fetchDepartures(id) {
+  let res;
+  for (let attempt = 0; ; attempt++) {
+    res = await fetch(`${API}/sites/${id}/departures?forecast=90`, { cache: "no-store" });
+    // SL rate-limits bursts (429) and occasionally hiccups (5xx): back off and retry a couple of times
+    if ((res.status === 429 || res.status >= 500) && attempt < 3) { await sleep(1000 * 2 ** attempt + Math.random() * 500); continue; }
+    break;
+  }
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const json = await res.json();
+  const s = stateFor(id);
+  s.deps = (json.departures || [])
+    .filter(d => d.line?.designation && d.state !== "CANCELLED")
+    .map(d => ({ line: d.line.designation, dest: d.destination, dir: d.direction_code, time: parseSthlm(d.expected || d.scheduled) }))
+    .sort((a, b) => a.time - b.time);
+  // remember destinations per line (for the sign plate and line picker) so they don't flicker
+  for (const d of s.deps) (s.routes[d.line] ||= {})[d.dir] = d.dest;
+  s.error = null;
+}
+
+async function load() {
+  if (!config.stops.length) { render(); return; }
+  $refresh.classList.add("busy");
+  const results = await Promise.allSettled(config.stops.map(stop => fetchDepartures(stop.id)));
+  results.forEach((r, i) => { if (r.status === "rejected") stateFor(config.stops[i].id).error = r.reason.message; });
+  if (results.some(r => r.status === "fulfilled")) lastOk = new Date();
+  $refresh.classList.remove("busy");
+  render();
+}
+
+// ---- Rendering ------------------------------------------------------------
+const $carousel = document.getElementById("carousel");
+const $dots = document.getElementById("dots");
+const $status = document.getElementById("status");
+const $refresh = document.getElementById("refresh");
+
+function minsUntil(t, now) { return Math.floor((t - now) / 60000); }
+function fmt(t, now) {
+  const m = minsUntil(t, now);
+  if (m <= 0) return "Nu";
+  if (m < 60) return `${m}<small>min</small>`;
+  return t.toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit" });
+}
+function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
+
+const BUS_ICON = `<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true">
+  <rect x="4" y="2.5" width="16" height="16" rx="2.5"/><path d="M4 11h16M4 6.5h16"/>
+  <circle cx="8" cy="15" r="1" fill="#1a1a1a"/><circle cx="16" cy="15" r="1" fill="#1a1a1a"/><path d="M7 18.5v2.5M17 18.5v2.5"/></svg>`;
+
+const wants = (stop, line) => !stop.lines?.length || stop.lines.includes(line);
+
+function signHTML(stop, now) {
+  const s = stateFor(stop.id);
+  const lines = (stop.lines?.length ? [...stop.lines] : Object.keys(s.routes)).sort(byLine);
+  const routes = lines.map(l => {
+    const ends = Object.entries(s.routes[l] || {}).sort(([a], [b]) => a - b).map(([, d]) => esc(d));
+    return `<div class="route"><span class="num">${esc(l)}</span><span class="ends">${ends.join("<br>") || "&nbsp;"}</span></div>`;
+  }).join("");
+
+  let screen;
+  if (s.error && !s.deps.length) screen = `<div class="msg">Kunde inte hämta avgångar</div>`;
+  else {
+    const count = {};
+    const rows = s.deps
+      .filter(d => wants(stop, d.line) && d.time - now > -30000)
+      .filter(d => { const k = d.line + "|" + d.dir; return (count[k] = (count[k] || 0) + 1) <= PER_DIRECTION; })
+      .slice(0, MAX_ROWS);
+    screen = rows.length
+      ? rows.map(d => `<div class="row"><span class="badge">${esc(d.line)}</span><span class="dest">${esc(d.dest)}</span><span class="t">${fmt(d.time, now)}</span></div>`).join("")
+      : `<div class="msg">${lastOk ? "Inga avgångar närmaste timmen" : "Laddar…"}</div>`;
+  }
+  return `<section class="sign">
+    <div class="plate">
+      <div class="plate-top"><span class="ico bus">${BUS_ICON}</span><span class="ico h">H</span></div>
+      <div class="plate-name">${esc(stop.name)}</div>
+      ${routes}
+    </div>
+    <div class="pole"></div>
+    <div class="display"><div class="screen">${screen}</div></div>
+  </section>`;
+}
+
+// Slides are rebuilt only when the stop list changes, so swiping isn't disturbed by refreshes.
+let slideKey = "";
+function buildSlides() {
+  const key = config.stops.map(s => s.id).join(",");
+  if (key === slideKey) return;
+  slideKey = key;
+  if (!config.stops.length) {
+    $carousel.innerHTML = `<div class="slide"><div class="empty">
+      <div>Inga hållplatser än.</div>
+      <button class="btn" type="button" onclick="openSettings()">Lägg till hållplats</button></div></div>`;
+    $dots.innerHTML = "";
+    return;
+  }
+  $carousel.innerHTML = config.stops.map((s, i) => `<div class="slide" data-i="${i}" aria-label="${esc(s.name)}"></div>`).join("");
+  $dots.innerHTML = config.stops.length > 1
+    ? config.stops.map((s, i) => `<button type="button" role="tab" aria-label="${esc(s.name)}" data-i="${i}"></button>`).join("")
+    : "";
+  config.slide = Math.min(config.slide, config.stops.length - 1);
+  requestAnimationFrame(() => goTo(config.slide, "instant"));
+}
+
+function render() {
+  buildSlides();
+  const now = new Date();
+  config.stops.forEach((stop, i) => {
+    const el = $carousel.children[i];
+    if (el) el.innerHTML = signHTML(stop, now);
+  });
+  updateDots();
+  $status.textContent = lastOk
+    ? `Uppdaterad ${lastOk.toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}`
+    : config.stops.length ? "Laddar…" : "";
+  document.title = config.stops[config.slide]?.name || "Avgångar";
+}
+
+// ---- Carousel behaviour ---------------------------------------------------
+function current() { return Math.round($carousel.scrollLeft / Math.max(1, $carousel.clientWidth)); }
+function goTo(i, behavior = "smooth") {
+  $carousel.scrollTo({ left: i * $carousel.clientWidth, behavior });
+}
+function updateDots() {
+  [...$dots.children].forEach((d, i) => d.setAttribute("aria-current", String(i === config.slide)));
+}
+let scrollTimer;
+$carousel.addEventListener("scroll", () => {
+  const i = current();
+  if (i !== config.slide && config.stops[i]) {
+    config.slide = i; updateDots();
+    document.title = config.stops[i].name;
+  }
+  clearTimeout(scrollTimer);
+  scrollTimer = setTimeout(saveConfig, 300);
+}, { passive: true });
+$dots.addEventListener("click", e => { const b = e.target.closest("button"); if (b) goTo(+b.dataset.i); });
+document.addEventListener("keydown", e => {
+  if ($settings.open) return;
+  if (e.key === "ArrowRight") goTo(Math.min(config.slide + 1, config.stops.length - 1));
+  if (e.key === "ArrowLeft") goTo(Math.max(config.slide - 1, 0));
+});
+window.addEventListener("resize", () => goTo(config.slide, "instant"));
+
+// ---- Settings UI ----------------------------------------------------------
+const $settings = document.getElementById("settings");
+const $mine = document.getElementById("mine");
+const $q = document.getElementById("q");
+const $results = document.getElementById("results");
+let sites = null;        // full stop list, fetched on first open
+let nearby = null;       // [{ site, dist }] when "Nära mig" is active
+
+function openSettings() {
+  renderMine();
+  $settings.showModal();
+  ensureSites();
+  // load lines for stops we have no data for yet (e.g. after adding)
+  config.stops.forEach(s => { if (!state.get(s.id)?.deps.length) fetchDepartures(s.id).then(renderMine).catch(() => {}); });
+}
+function closeSettings() {
+  $settings.close();
+}
+$settings.addEventListener("close", () => { saveConfig(); slideKey = ""; render(); load(); });
+document.getElementById("open-settings").onclick = openSettings;
+document.getElementById("close-settings").onclick = closeSettings;
+
+async function ensureSites() {
+  if (sites) return sites;
+  try {
+    const res = await fetch(`${API}/sites?expand=false`);
+    sites = (await res.json()).filter(s => s.name);
+  } catch {
+    $results.innerHTML = `<p class="hint">Kunde inte hämta hållplatslistan.</p>`;
+  }
+  renderResults();
+  return sites;
+}
+
+function renderMine() {
+  if (!config.stops.length) { $mine.innerHTML = `<p class="hint">Inga hållplatser än. Sök nedan för att lägga till.</p>`; return; }
+  $mine.innerHTML = config.stops.map((stop, i) => {
+    const s = state.get(stop.id);
+    const known = [...new Set([...Object.keys(s?.routes || {}), ...(stop.lines || [])])].sort(byLine);
+    const chips = known.length
+      ? known.map(l => `<button type="button" class="chip" data-act="line" data-i="${i}" data-line="${esc(l)}" aria-pressed="${(stop.lines || []).includes(l)}">${esc(l)}</button>`).join("")
+      : `<span class="note">${s?.error ? "Kunde inte hämta linjer" : "Hämtar linjer…"}</span>`;
+    return `<div class="item">
+      <div class="item-head">
+        <span class="item-name">${esc(stop.name)}${stop.note ? `<small>${esc(stop.note)}</small>` : ""}</span>
+        <button type="button" class="icon-btn" data-act="up" data-i="${i}" aria-label="Flytta upp" ${i === 0 ? "disabled" : ""}>↑</button>
+        <button type="button" class="icon-btn" data-act="remove" data-i="${i}" aria-label="Ta bort">✕</button>
+      </div>
+      <div class="chips">${chips}</div>
+    </div>`;
+  }).join("");
+}
+
+$mine.addEventListener("click", e => {
+  const b = e.target.closest("button[data-act]");
+  if (!b) return;
+  const i = +b.dataset.i, stop = config.stops[i];
+  if (b.dataset.act === "remove") config.stops.splice(i, 1);
+  if (b.dataset.act === "up" && i > 0) [config.stops[i - 1], config.stops[i]] = [config.stops[i], config.stops[i - 1]];
+  if (b.dataset.act === "line") {
+    const l = b.dataset.line, set = new Set(stop.lines || []);
+    set.has(l) ? set.delete(l) : set.add(l);
+    stop.lines = [...set].sort(byLine);
+  }
+  saveConfig(); renderMine(); renderResults();
+});
+
+const norm = s => s.toLocaleLowerCase("sv").normalize("NFD").replace(/[̀-ͯ]/g, "");
+function renderResults() {
+  if (!sites) { $results.innerHTML = `<p class="hint">Hämtar hållplatser…</p>`; return; }
+  const q = norm($q.value.trim());
+  let list;
+  if (q) {
+    list = sites.filter(s => norm(s.name).includes(q))
+      .sort((a, b) => (norm(b.name).startsWith(q) - norm(a.name).startsWith(q)) || a.name.localeCompare(b.name, "sv"))
+      .slice(0, 12).map(site => ({ site, dist: nearby?.get(site.id) }));
+  } else if (nearby) {
+    list = [...nearby].sort((a, b) => a[1] - b[1]).slice(0, 12).map(([id, dist]) => ({ site: sites.find(s => s.id === id), dist }));
+  } else { $results.innerHTML = ""; return; }
+  if (!list.length) { $results.innerHTML = `<p class="hint">Inga träffar.</p>`; return; }
+  const have = new Set(config.stops.map(s => s.id));
+  $results.innerHTML = list.map(({ site, dist }) => `
+    <button type="button" class="result ${have.has(site.id) ? "added" : ""}" data-id="${site.id}">
+      <span>${esc(site.name)}${site.note ? `<small>${esc(site.note)}</small>` : ""}</span>
+      <span class="dist">${have.has(site.id) ? "Tillagd" : dist != null ? (dist < 1000 ? `${Math.round(dist / 10) * 10} m` : `${(dist / 1000).toFixed(1)} km`) : ""}</span>
+    </button>`).join("");
+}
+$q.addEventListener("input", renderResults);
+$results.addEventListener("click", e => {
+  const b = e.target.closest(".result");
+  if (!b) return;
+  const site = sites.find(s => s.id === +b.dataset.id);
+  if (!site || config.stops.some(s => s.id === site.id)) return;
+  config.stops.push({ id: site.id, name: site.name, note: site.note || undefined, lines: [] });
+  config.slide = config.stops.length - 1;
+  saveConfig(); renderMine(); renderResults();
+  fetchDepartures(site.id).then(renderMine).catch(() => { stateFor(site.id).error = "x"; renderMine(); });
+});
+
+document.getElementById("near").onclick = () => {
+  if (!navigator.geolocation) return;
+  const btn = document.getElementById("near");
+  btn.textContent = "Söker…";
+  navigator.geolocation.getCurrentPosition(async pos => {
+    await ensureSites();
+    const { latitude: la, longitude: lo } = pos.coords, k = Math.cos(la * Math.PI / 180);
+    nearby = new Map(sites.filter(s => s.lat).map(s => [s.id, 111320 * Math.hypot(s.lat - la, (s.lon - lo) * k)]));
+    $q.value = ""; btn.textContent = "Nära mig"; renderResults();
+  }, () => { btn.textContent = "Nära mig"; $results.innerHTML = `<p class="hint">Kunde inte hämta din position.</p>`; },
+  { enableHighAccuracy: true, timeout: 10000 });
+};
+
+// ---- Go -------------------------------------------------------------------
+$refresh.onclick = () => load();
+render();
+load();
+setInterval(load, REFRESH_MS);
+setInterval(render, 5000); // keep countdowns fresh between fetches
+document.addEventListener("visibilitychange", () => { if (!document.hidden) load(); });
+</script>
+</body>
+</html>

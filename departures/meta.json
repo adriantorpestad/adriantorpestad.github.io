@@ -1,0 +1,10 @@
+{
+  "title": "Avgångar",
+  "description": "Live SL departures for your stops, styled like a stop sign.",
+  "thumbnail": "thumb.png",
+  "tags": [
+    "sl",
+    "transit"
+  ],
+  "version": "v0.1.0"
+}

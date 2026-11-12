@@ -1,0 +1,11 @@
+{
+  "title": "Temple Climbers",
+  "description": "A cozy puzzle game: set stones so pilgrims can climb a low-poly mountain to its temple.",
+  "thumbnail": "thumb.png",
+  "tags": [
+    "game",
+    "puzzle",
+    "three.js"
+  ],
+  "version": "v0.4.1"
+}

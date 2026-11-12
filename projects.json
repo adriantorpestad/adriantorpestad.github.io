@@ -1,0 +1,39 @@
+[
+  {
+    "slug": "wallpapers",
+    "url": "wallpapers/",
+    "title": "Wallpapers",
+    "description": "Generate abstract wallpapers for iPhone, iPad, Mac and more.",
+    "thumbnail": "wallpapers/thumb.png",
+    "tags": [
+      "webgl",
+      "generative"
+    ],
+    "version": "v0.1.0"
+  },
+  {
+    "slug": "departures",
+    "url": "departures/",
+    "title": "Avgångar",
+    "description": "Live SL departures for your stops, styled like a stop sign.",
+    "thumbnail": "departures/thumb.png",
+    "tags": [
+      "sl",
+      "transit"
+    ],
+    "version": "v0.1.0"
+  },
+  {
+    "slug": "temple-climbers",
+    "url": "temple-climbers/",
+    "title": "Temple Climbers",
+    "description": "A cozy puzzle game: set stones so pilgrims can climb a low-poly mountain to its temple.",
+    "thumbnail": "temple-climbers/thumb.png",
+    "tags": [
+      "game",
+      "puzzle",
+      "three.js"
+    ],
+    "version": "v0.4.1"
+  }
+]
